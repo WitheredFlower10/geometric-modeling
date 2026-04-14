@@ -10,9 +10,9 @@
 
 using namespace std;
 
-myMesh::myMesh(void) { /**** TODO ****/ }
+myMesh::myMesh(void) {}
 
-myMesh::~myMesh(void) { /**** TODO ****/ }
+myMesh::~myMesh(void) { clear(); }
 
 void myMesh::clear() {
   for (unsigned int i = 0; i < vertices.size(); i++)
@@ -76,12 +76,50 @@ bool myMesh::readFile(std::string filename) {
     } else if (t == "usemtl") {
     } else if (t == "s") {
     } else if (t == "f") {
-      cout << "f";
-      while (myline >> u)
-        cout << " " << atoi((u.substr(0, u.find("/"))).c_str());
-      cout << endl;
+    vector<int> ids;
+
+    while (myline >> u) {
+        int id = atoi((u.substr(0, u.find("/"))).c_str());
+        ids.push_back(id - 1);
     }
+    int n = ids.size();
+    myFace* face = new myFace();
+    faces.push_back(face);
+    vector<myHalfedge*> face_edges;
+    for (int i = 0; i < n; i++) {
+        myHalfedge* he = new myHalfedge();
+        halfedges.push_back(he);
+        face_edges.push_back(he);
+
+        he->adjacent_face = face;
+        he->source = vertices[ids[i]];
+    }
+
+    for (int i = 0; i < n; i++) {
+        face_edges[i]->next = face_edges[(i + 1) % n];
+        face_edges[i]->prev = face_edges[(i - 1 + n) % n];
+    }
+
+    for (int i = 0; i < n; i++) {
+        int v1 = ids[i];
+        int v2 = ids[(i + 1) % n];
+
+        pair<int, int> edge = make_pair(v1, v2);
+        pair<int, int> twin_edge = make_pair(v2, v1);
+
+        myHalfedge* he = face_edges[i];
+
+        auto it = twin_map.find(twin_edge);
+        if (it != twin_map.end()) {
+            he->twin = it->second;
+            it->second->twin = he;
+        } else {
+            twin_map[edge] = he;
+        }
+    }
+    face->adjacent_halfedge = face_edges[0];
   }
+}
 
   checkMesh();
   normalize();
@@ -89,7 +127,12 @@ bool myMesh::readFile(std::string filename) {
   return true;
 }
 
-void myMesh::computeNormals() { /**** TODO ****/ }
+void myMesh::computeNormals() { 
+  for (myFace* f : faces)
+      f->computeNormal();
+  for (myVertex* v : vertices)
+      v->computeNormal();
+ }
 
 void myMesh::normalize() {
   if (vertices.size() < 1)

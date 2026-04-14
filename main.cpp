@@ -272,11 +272,14 @@ void display() {
       if ((*it)->twin == NULL)
         continue;
       myVertex *v2 = (*it)->twin->source;
-
-      if ( 0 /*ADD THE CONDITION TO CHECK IF THE HALFEDGE DEFINED BY (V1, V2) IS A SILHOUETTE EDGE*/ )
-			{
-        silhouette_edges.push_back(v1->index);
-        silhouette_edges.push_back(v2->index);
+      myFace* f1 = e->adjacent_face;
+      myFace* f2 = e->twin->adjacent_face;
+      double d1 = f1->normal->dot(viewDir);
+      double d2 = f2->normal->dot(viewDir);
+      if (d1 * d2 < 0)
+      {
+      silhouette_edges.push_back(v1->index);
+      silhouette_edges.push_back(v2->index);
       }
     }
 
@@ -386,7 +389,7 @@ void initMesh() {
 
   cout << "Reading mesh from file...\n";
   m = new myMesh();
-  if (m->readFile("cube.obj")) {
+  if (m->readFile("dolphin.obj")) {
     m->computeNormals();
     makeBuffers(m);
   }

@@ -28,7 +28,7 @@ void myVertex::computeNormal() {
             sum += *(he->adjacent_face->normal);
         }
 
-        if (!he->twin) break; // sécurité
+        if (!he->twin) break;
         he = he->twin->next;
 
     } while (he != start);

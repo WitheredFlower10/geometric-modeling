@@ -21,7 +21,8 @@ using namespace std;
 #include "myPoint3D.h"
 #include "myVector3D.h"
 
-enum MENU {
+enum MENU
+{
   MENU_CATMULLCLARK,
   MENU_DRAWWIREFRAME,
   MENU_EXIT,
@@ -59,56 +60,69 @@ myFace *closest_face;
 
 #include "helperFunctions.h"
 
-void clear() {
+void clear()
+{
   closest_edge = NULL;
   closest_vertex = NULL;
   closest_face = NULL;
   pickedpoint = NULL;
 }
 
-void menu(int item) {
-  switch (item) {
-  case MENU_TRIANGULATE: {
+void menu(int item)
+{
+  switch (item)
+  {
+  case MENU_TRIANGULATE:
+  {
     m->triangulate();
     m->computeNormals();
     makeBuffers(m);
     break;
   }
-  case MENU_SHADINGTYPE: {
+  case MENU_SHADINGTYPE:
+  {
     smooth = !smooth;
     break;
   }
-  case MENU_DRAWMESH: {
+  case MENU_DRAWMESH:
+  {
     drawmesh = !drawmesh;
     break;
   }
-  case MENU_DRAWMESHVERTICES: {
+  case MENU_DRAWMESHVERTICES:
+  {
     drawmeshvertices = !drawmeshvertices;
     break;
   }
-  case MENU_DRAWWIREFRAME: {
+  case MENU_DRAWWIREFRAME:
+  {
     drawwireframe = !drawwireframe;
     break;
   }
-  case MENU_DRAWNORMALS: {
+  case MENU_DRAWNORMALS:
+  {
     drawnormals = !drawnormals;
     break;
   }
-  case MENU_DRAWSILHOUETTE: {
+  case MENU_DRAWSILHOUETTE:
+  {
     drawsilhouette = !drawsilhouette;
     break;
   }
-  case MENU_SELECTCLEAR: {
+  case MENU_SELECTCLEAR:
+  {
     clear();
     break;
   }
-  case MENU_SELECTEDGE: {
+  case MENU_SELECTEDGE:
+  {
     if (pickedpoint == NULL)
       break;
     closest_edge = (*m->halfedges.begin());
     double min = std::numeric_limits<double>::max();
     for (vector<myHalfedge *>::iterator it = m->halfedges.begin();
-         it != m->halfedges.end(); it++) {
+         it != m->halfedges.end(); it++)
+    {
       myHalfedge *e = (*it);
       myVertex *v1 = (*it)->source;
       if ((*it)->twin == NULL)
@@ -116,43 +130,50 @@ void menu(int item) {
       myVertex *v2 = (*it)->twin->source;
 
       double d = pickedpoint->dist(v1->point, v2->point);
-      if (d < min) {
+      if (d < min)
+      {
         min = d;
         closest_edge = e;
       }
     }
     break;
   }
-  case MENU_SELECTVERTEX: {
+  case MENU_SELECTVERTEX:
+  {
     if (pickedpoint == NULL)
       break;
     closest_vertex = (*m->vertices.begin());
     double min = std::numeric_limits<double>::max();
     for (vector<myVertex *>::iterator it = m->vertices.begin();
-         it != m->vertices.end(); it++) {
+         it != m->vertices.end(); it++)
+    {
       double d = pickedpoint->dist(*((*it)->point));
-      if (d < min) {
+      if (d < min)
+      {
         min = d;
         closest_vertex = *it;
       }
     }
     break;
   }
-  case MENU_INFLATE: {
+  case MENU_INFLATE:
+  {
     for (vector<myVertex *>::iterator it = m->vertices.begin();
          it != m->vertices.end(); it++)
       *((*it)->point) = *((*it)->point) + *((*it)->normal) * 0.01;
     makeBuffers(m);
     break;
   }
-  case MENU_CATMULLCLARK: {
+  case MENU_CATMULLCLARK:
+  {
     m->subdivisionCatmullClark();
     clear();
     m->computeNormals();
     makeBuffers(m);
     break;
   }
-  case MENU_SPLITEDGE: {
+  case MENU_SPLITEDGE:
+  {
     if (pickedpoint != NULL && closest_edge != NULL)
       m->splitEdge(closest_edge, pickedpoint);
     clear();
@@ -160,7 +181,8 @@ void menu(int item) {
     makeBuffers(m);
     break;
   }
-  case MENU_SPLITFACE: {
+  case MENU_SPLITFACE:
+  {
     if (pickedpoint != NULL && closest_face != NULL)
       m->splitFaceTRIS(closest_face, pickedpoint);
     clear();
@@ -168,14 +190,16 @@ void menu(int item) {
     makeBuffers(m);
     break;
   }
-  case MENU_EXIT: {
+  case MENU_EXIT:
+  {
     m->clear();
     glDeleteBuffers(10, &buffers[0]);
     glDeleteVertexArrays(10, &vaos[0]);
     exit(0);
     break;
   }
-  case MENU_SIMPLIFY: {
+  case MENU_SIMPLIFY:
+  {
     m->simplify();
     break;
   }
@@ -184,7 +208,8 @@ void menu(int item) {
 }
 
 // This function is called to display objects on screen.
-void display() {
+void display()
+{
   // Clearing the color on the screen.
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -212,24 +237,31 @@ void display() {
   vector<GLfloat> color;
   color.resize(4);
 
-  if ((drawmesh && vaos[VAO_TRIANGLES_NORMSPERVERTEX]) || drawsilhouette) {
+  if ((drawmesh && vaos[VAO_TRIANGLES_NORMSPERVERTEX]) || drawsilhouette)
+  {
     glLineWidth(1.0);
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(2.0f, 2.0f); // for z-bleeding, z-fighting.
     if (drawsilhouette && !drawmesh)
       glUniform1i(glGetUniformLocation(shaderprogram, "type"), 1);
-    if (drawmesh) {
+    if (drawmesh)
+    {
       color[0] = 0.4f, color[1] = 0.8f, color[2] = 0.4f, color[3] = 1.0f;
-    } else {
+    }
+    else
+    {
       color[0] = 1.0f, color[1] = 1.0f, color[2] = 1.0f, color[3] = 1.0f;
     }
     glUniform4fv(glGetUniformLocation(shaderprogram, "kd"), 1, &color[0]);
 
-    if (smooth) {
+    if (smooth)
+    {
       glBindVertexArray(vaos[VAO_TRIANGLES_NORMSPERVERTEX]);
       glDrawArrays(GL_TRIANGLES, 0, num_triangles * 3);
       glBindVertexArray(0);
-    } else {
+    }
+    else
+    {
       glBindVertexArray(vaos[VAO_TRIANGLES_NORMSPERFACE]);
       glDrawArrays(GL_TRIANGLES, 0, num_triangles * 3);
       glBindVertexArray(0);
@@ -239,7 +271,8 @@ void display() {
     glDisable(GL_POLYGON_OFFSET_FILL);
   }
 
-  if (drawmeshvertices && vaos[VAO_VERTICES]) {
+  if (drawmeshvertices && vaos[VAO_VERTICES])
+  {
     glPointSize(4.0);
     color[0] = 0.0f, color[1] = 0.0f, color[2] = 0.0f, color[3] = 1.0f;
     glUniform4fv(glGetUniformLocation(shaderprogram, "kd"), 1, &color[0]);
@@ -249,7 +282,8 @@ void display() {
     glBindVertexArray(0);
   }
 
-  if (drawwireframe && vaos[VAO_EDGES]) {
+  if (drawwireframe && vaos[VAO_EDGES])
+  {
     glLineWidth(2.0);
     color[0] = 0.0f, color[1] = 0.0f, color[2] = 0.0f, color[3] = 1.0f;
     glUniform4fv(glGetUniformLocation(shaderprogram, "kd"), 1, &color[0]);
@@ -258,31 +292,41 @@ void display() {
     glBindVertexArray(0);
   }
 
-  if (drawsilhouette) {
+  if (drawsilhouette)
+  {
     glLineWidth(4.0);
     color[0] = 1.0f, color[1] = 0.0f, color[2] = 0.0f, color[3] = 1.0f;
     glUniform4fv(glGetUniformLocation(shaderprogram, "kd"), 1, &color[0]);
 
     vector<GLuint> silhouette_edges;
     for (vector<myHalfedge *>::iterator it = m->halfedges.begin();
-         it != m->halfedges.end(); it++) {
+         it != m->halfedges.end(); it++)
+    {
       /**** TODO: WRITE CODE TO COMPUTE SILHOUETTE ****/
       myHalfedge *e = (*it);
       myVertex *v1 = (*it)->source;
       if ((*it)->twin == NULL)
         continue;
       myVertex *v2 = (*it)->twin->source;
-      myFace* f1 = e->adjacent_face;
-      myFace* f2 = e->twin->adjacent_face;
-      double d1 = f1->normal->dot(viewDir);
-      double d2 = f2->normal->dot(viewDir);
-      if (d1 * d2 < 0)
+      myFace *f1 = e->adjacent_face;
+      myFace *f2 = e->twin->adjacent_face;  
+      if (!f1 || !f2)
+        continue;
+      myVector3D viewDir = camera_eye - (*v1->point + *v2->point) / 2.0;
+      viewDir.normalize();
+      double d1 = (*f1->normal) * viewDir;
+      double d2 = (*f2->normal) * viewDir;
+      if (d1 < 0 != d2 < 0)
       {
-      silhouette_edges.push_back(v1->index);
-      silhouette_edges.push_back(v2->index);
+        silhouette_edges.push_back(v1->index);
+        silhouette_edges.push_back(v2->index);
       }
     }
+    static GLuint silhouette_vao = 0;
+    if (silhouette_vao == 0)
+      glGenVertexArrays(1, &silhouette_vao);
 
+    glBindVertexArray(silhouette_vao);
     GLuint silhouette_edges_buffer;
     glGenBuffers(1, &silhouette_edges_buffer);
 
@@ -304,7 +348,8 @@ void display() {
     glDeleteBuffers(1, &silhouette_edges_buffer);
   }
 
-  if (drawnormals && vaos[VAO_NORMALS]) {
+  if (drawnormals && vaos[VAO_NORMALS])
+  {
     glLineWidth(1.0);
     color[0] = 0.2f, color[1] = 0.2f, color[2] = 0.2f, color[3] = 1.0f;
     glUniform4fv(glGetUniformLocation(shaderprogram, "kd"), 1, &color[0]);
@@ -314,7 +359,8 @@ void display() {
     glBindVertexArray(0);
   }
 
-  if (pickedpoint != NULL) {
+  if (pickedpoint != NULL)
+  {
     glUseProgram(0);
     glPointSize(8.0);
     glBegin(GL_POINTS);
@@ -325,7 +371,8 @@ void display() {
     glUseProgram(shaderprogram);
   }
 
-  if (closest_edge != NULL) {
+  if (closest_edge != NULL)
+  {
     glUseProgram(0);
     glLineWidth(4.0);
     glBegin(GL_LINES);
@@ -340,7 +387,8 @@ void display() {
     glUseProgram(shaderprogram);
   }
 
-  if (closest_vertex != NULL) {
+  if (closest_vertex != NULL)
+  {
     glUseProgram(0);
     glPointSize(8.0);
     glBegin(GL_POINTS);
@@ -351,7 +399,8 @@ void display() {
     glUseProgram(shaderprogram);
   }
 
-  if (closest_face != NULL) {
+  if (closest_face != NULL)
+  {
     glUseProgram(0);
     glBegin(GL_TRIANGLES);
     glColor3f(0.1f, 0.1f, 0.9f);
@@ -381,7 +430,8 @@ void display() {
   glutSwapBuffers();
 }
 
-void initMesh() {
+void initMesh()
+{
   pickedpoint = NULL;
   closest_edge = NULL;
   closest_vertex = NULL;
@@ -389,13 +439,15 @@ void initMesh() {
 
   cout << "Reading mesh from file...\n";
   m = new myMesh();
-  if (m->readFile("dolphin.obj")) {
+  if (m->readFile("dolphin.obj"))
+  {
     m->computeNormals();
     makeBuffers(m);
   }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   initInterface(argc, argv);
 
   initMesh();

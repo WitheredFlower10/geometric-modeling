@@ -116,14 +116,15 @@ bool myMesh::readFile(std::string filename) {
         } else {
             twin_map[edge] = he;
         }
+       if (vertices[ids[i]]->originof == NULL) {
+            vertices[ids[i]]->originof = he;
+        }
     }
     face->adjacent_halfedge = face_edges[0];
   }
 }
-
   checkMesh();
   normalize();
-
   return true;
 }
 

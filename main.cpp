@@ -302,7 +302,6 @@ void display()
     for (vector<myHalfedge *>::iterator it = m->halfedges.begin();
          it != m->halfedges.end(); it++)
     {
-      /**** TODO: WRITE CODE TO COMPUTE SILHOUETTE ****/
       myHalfedge *e = (*it);
       myVertex *v1 = (*it)->source;
       if ((*it)->twin == NULL)

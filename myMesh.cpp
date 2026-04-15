@@ -177,7 +177,21 @@ void myMesh::normalize() {
   }
 }
 
-void myMesh::splitFaceTRIS(myFace *f, myPoint3D *p) { /**** TODO ****/ }
+void myMesh::splitFaceTRIS(myFace *f, myPoint3D *p)
+{
+  myVertex *v_new = new myVertex();
+  v_new->point = new myPoint3D(p->X, p->Y, p->Z);
+  v_new->index = vertices.size();
+  vertices.push_back(v_new);
+
+  myHalfedge *e1 = f->adjacent_halfedge;
+  myHalfedge *e2 = e1->next;
+  myHalfedge *e3 = e2->next;
+
+  myVertex *v1 = e1->source;
+  myVertex *v2 = e2->source;
+  myVertex *v3 = e3->source;
+}
 
 void myMesh::splitEdge(myHalfedge *e1, myPoint3D *p) { /**** TODO ****/ }
 

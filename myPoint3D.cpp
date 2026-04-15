@@ -96,8 +96,12 @@ double myPoint3D::dist(myPoint3D *p1, myPoint3D *p2) {
 
 double myPoint3D::dist(myPoint3D *p1, myPoint3D *p2, myPoint3D *p3) {
   // distance  between current point, and the triangled defined by p1,p2,p3.
-  /**** TODO ****/
-  return 0.0;
+  myVector3D v1 = *p2 - *p1;
+  myVector3D v2 = *p3 - *p1;
+  myVector3D n = v1.crossproduct(v2);
+  n.normalize();
+  myVector3D vp = *this - *p1;
+  return fabs(vp * n);
 }
 
 void myPoint3D::circumcenter(myPoint3D *p1, myPoint3D *p2, myPoint3D *p3,

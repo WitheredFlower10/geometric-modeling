@@ -44,88 +44,110 @@ void myMesh::checkMesh() {
   else
     cout << "Each edge has a twin!\n";
 }
-
 bool myMesh::readFile(std::string filename) {
-  string s, t, u;
-  vector<int> faceids;
-  myHalfedge **hedges;
+    string s, t, u;
 
-  ifstream fin(filename);
-  if (!fin.is_open()) {
-    cout << "Unable to open file!\n";
-    return false;
-  }
-  name = filename;
-
-  map<pair<int, int>, myHalfedge *> twin_map;
-  map<pair<int, int>, myHalfedge *>::iterator it;
-
-  while (getline(fin, s)) {
-    stringstream myline(s);
-    myline >> t;
-    if (t == "g") {
-    } else if (t == "v") {
-      float x, y, z;
-      myline >> x >> y >> z;
-      cout << "v " << x << " " << y << " " << z << endl;
-      myPoint3D *p = new myPoint3D(x, y, z);
-      myVertex *v = new myVertex();
-      v->point = p;
-      vertices.push_back(v);
-    } else if (t == "mtllib") {
-    } else if (t == "usemtl") {
-    } else if (t == "s") {
-    } else if (t == "f") {
-    vector<int> ids;
-
-    while (myline >> u) {
-        int id = atoi((u.substr(0, u.find("/"))).c_str());
-        ids.push_back(id - 1);
-    }
-    int n = ids.size();
-    myFace* face = new myFace();
-    faces.push_back(face);
-    vector<myHalfedge*> face_edges;
-    for (int i = 0; i < n; i++) {
-        myHalfedge* he = new myHalfedge();
-        halfedges.push_back(he);
-        face_edges.push_back(he);
-
-        he->adjacent_face = face;
-        he->source = vertices[ids[i]];
+    ifstream fin(filename);
+    if (!fin.is_open()) {
+        cout << "Unable to open file!\n";
+        return false;
     }
 
-    for (int i = 0; i < n; i++) {
-        face_edges[i]->next = face_edges[(i + 1) % n];
-        face_edges[i]->prev = face_edges[(i - 1 + n) % n];
-    }
+    name = filename;
 
-    for (int i = 0; i < n; i++) {
-        int v1 = ids[i];
-        int v2 = ids[(i + 1) % n];
+    map<pair<int, int>, myHalfedge *> twin_map;
 
-        pair<int, int> edge = make_pair(v1, v2);
-        pair<int, int> twin_edge = make_pair(v2, v1);
+    while (getline(fin, s)) {
+        if (s.empty() || s[0] == '#') continue;
 
-        myHalfedge* he = face_edges[i];
+        stringstream myline(s);
+        myline >> t;
+        if (t == "v") {
+            float x, y, z;
+            myline >> x >> y >> z;
 
-        auto it = twin_map.find(twin_edge);
-        if (it != twin_map.end()) {
-            he->twin = it->second;
-            it->second->twin = he;
-        } else {
-            twin_map[edge] = he;
+            myPoint3D *p = new myPoint3D(x, y, z);
+            myVertex *v = new myVertex();
+
+            v->point = p;
+            v->originof = NULL;
+
+            vertices.push_back(v);
         }
-       if (vertices[ids[i]]->originof == NULL) {
-            vertices[ids[i]]->originof = he;
+        else if (t == "f") {
+
+            vector<int> ids;
+
+            while (myline >> u) {
+                string token = u.substr(0, u.find("/"));
+                int id = atoi(token.c_str());
+
+                if (id < 0)
+                    id = vertices.size() + id;
+                else
+                    id = id - 1;
+
+                if (id < 0 || id >= vertices.size()) continue;
+
+                ids.push_back(id);
+            }
+
+            int n = ids.size();
+            if (n < 3) continue;
+
+            myFace* face = new myFace();
+            faces.push_back(face);
+
+            vector<myHalfedge*> face_edges;
+
+            for (int i = 0; i < n; i++) {
+                myHalfedge* he = new myHalfedge();
+                halfedges.push_back(he);
+
+                he->adjacent_face = face;
+                he->source = vertices[ids[i]];
+                he->twin = NULL;
+
+                face_edges.push_back(he);
+            }
+
+            for (int i = 0; i < n; i++) {
+                face_edges[i]->next = face_edges[(i + 1) % n];
+                face_edges[i]->prev = face_edges[(i - 1 + n) % n];
+            }
+
+            for (int i = 0; i < n; i++) {
+                int v1 = ids[i];
+                int v2 = ids[(i + 1) % n];
+
+                pair<int, int> edge = make_pair(v1, v2);
+                pair<int, int> twin_edge = make_pair(v2, v1);
+
+                myHalfedge* he = face_edges[i];
+
+                auto it = twin_map.find(twin_edge);
+                if (it != twin_map.end()) {
+                    he->twin = it->second;
+                    it->second->twin = he;
+                } else {
+                    twin_map[edge] = he;
+                }
+
+                if (vertices[v1]->originof == NULL) {
+                    vertices[v1]->originof = he;
+                }
+            }
+
+            face->adjacent_halfedge = face_edges[0];
         }
     }
-    face->adjacent_halfedge = face_edges[0];
-  }
-}
-  checkMesh();
-  normalize();
-  return true;
+
+    fin.close();
+
+    checkMesh();     
+    normalize();   
+
+    return true;
 }
 
 void myMesh::computeNormals() { 
@@ -193,7 +215,25 @@ void myMesh::splitFaceTRIS(myFace *f, myPoint3D *p)
   myVertex *v3 = e3->source;
 }
 
-void myMesh::splitEdge(myHalfedge *e1, myPoint3D *p) { /**** TODO ****/ }
+void myMesh::splitEdge(myHalfedge *e1, myPoint3D *p)
+{
+  myVertex *v_new = new myVertex();
+  v_new->point = new myPoint3D(p->X, p->Y, p->Z);
+  vertices.push_back(v_new);
+
+  myHalfedge *enext = e1->next; 
+  myHalfedge *etwin = e1->twin;
+  myVertex *v_end = enext->source;
+
+  myHalfedge *e_new = new myHalfedge();
+  halfedges.push_back(e_new);
+
+  e_new->source = v_new;
+  e_new->next = enext;
+  e_new->adjacent_face = e1->adjacent_face;
+  e1->next = e_new;
+  v_new->originof = e_new;
+}
 
 void myMesh::splitFaceQUADS(myFace *f, myPoint3D *p) { /**** TODO ****/ }
 
@@ -203,10 +243,69 @@ void myMesh::simplify() { /**** TODO ****/ }
 
 void myMesh::simplify(myVertex *) { /**** TODO ****/ }
 
-void myMesh::triangulate() { /**** TODO ****/ }
+void myMesh::triangulate()
+{
+  vector<myFace *> original_faces = faces;
+  for (myFace *f : original_faces)
+  {
+    triangulate(f);
+  }
+}
 
-// return false if already triangle, true othewise.
-bool myMesh::triangulate(myFace *f) {
-  /**** TODO ****/
-  return false;
+bool myMesh::triangulate(myFace *f)
+{
+    myHalfedge *start = f->adjacent_halfedge;
+
+    int count = 0;
+    myHalfedge *curr = start;
+    do {
+        count++;
+        curr = curr->next;
+    } while (curr != start);
+
+    if (count <= 3)
+        return false;
+
+    myHalfedge *v0 = start;
+    myHalfedge *v1 = start->next;
+    myHalfedge *v2 = v1->next;
+
+    for (int i = 0; i < count - 3; i++)
+    {
+        myHalfedge *v3 = v2->next;
+
+        myHalfedge *e0 = new myHalfedge();
+        myHalfedge *e1 = new myHalfedge();
+        myHalfedge *e2 = new myHalfedge();
+
+        halfedges.push_back(e0);
+        halfedges.push_back(e1);
+        halfedges.push_back(e2);
+
+        myFace *f_new = new myFace();
+        faces.push_back(f_new);
+
+        e0->source = v0->source;
+        e1->source = v1->source;
+        e2->source = v2->source;
+
+        e0->next = e1;
+        e1->next = e2;
+        e2->next = e0;
+
+        e0->prev = e2;
+        e1->prev = e0;
+        e2->prev = e1;
+
+        e0->adjacent_face = f_new;
+        e1->adjacent_face = f_new;
+        e2->adjacent_face = f_new;
+
+        f_new->adjacent_halfedge = e0;
+
+        v1 = v2;
+        v2 = v3;
+    }
+
+    return true;
 }

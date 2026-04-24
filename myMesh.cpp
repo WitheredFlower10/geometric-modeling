@@ -252,7 +252,8 @@ void myMesh::triangulate()
   }
 }
 
-bool myMesh::triangulate(myFace *f)
+//Triangulation de base
+/*bool myMesh::triangulate(myFace *f)
 {
     myHalfedge *start = f->adjacent_halfedge;
 
@@ -306,6 +307,160 @@ bool myMesh::triangulate(myFace *f)
         v1 = v2;
         v2 = v3;
     }
+
+    return true;
+}*/
+
+
+
+bool myMesh::triangulate(myFace *face)
+{
+    const double eps = 1e-10;
+
+    int nb = 0;
+    myHalfedge* h = face->adjacent_halfedge;
+    do {
+        nb++;
+        h = h->next;
+    } while (h != face->adjacent_halfedge);
+
+    if (nb <= 3) return false;
+
+    vector<myHalfedge*> edges(nb);
+    vector<myVertex*> points(nb);
+
+    h = face->adjacent_halfedge;
+    for (int i = 0; i < nb; i++) {
+        edges[i] = h;
+        points[i] = h->source;
+        h = h->next;
+    }
+
+    myVector3D normal(0, 0, 0);
+    for (int i = 0; i < nb; i++) {
+        myPoint3D* p0 = points[i]->point;
+        myPoint3D* p1 = points[(i + 1) % nb]->point;
+
+        normal.dX += (p0->Y - p1->Y) * (p0->Z + p1->Z);
+        normal.dY += (p0->Z - p1->Z) * (p0->X + p1->X);
+        normal.dZ += (p0->X - p1->X) * (p0->Y + p1->Y);
+    }
+
+    if (normal.length() < eps) return false;
+    normal.normalize();
+
+    vector<int> next(nb), prev(nb);
+    for (int i = 0; i < nb; i++) {
+        next[i] = (i + 1) % nb;
+        prev[i] = (i - 1 + nb) % nb;
+    }
+
+    int left = nb;
+    int current = 0;
+    int guard = 0;
+
+    while (left > 3)
+    {
+       
+
+        bool clipped = false;
+        int start = current;
+
+        do {
+            int before = prev[current];
+            int after = next[current];
+
+            myVector3D u = *points[current]->point - *points[before]->point;
+            myVector3D v = *points[after]->point - *points[current]->point;
+
+            if ((u.crossproduct(v)) * normal > eps)
+            {
+                bool valid = true;
+
+                int check = next[after];
+                while (check != before)
+                {
+                    myVector3D t0 = (*points[current]->point - *points[before]->point)
+                                    .crossproduct(*points[check]->point - *points[before]->point);
+                    myVector3D t1 = (*points[after]->point - *points[current]->point)
+                                    .crossproduct(*points[check]->point - *points[current]->point);
+                    myVector3D t2 = (*points[before]->point - *points[after]->point)
+                                    .crossproduct(*points[check]->point - *points[after]->point);
+
+                    if (t0 * normal > eps && t1 * normal > eps && t2 * normal > eps)
+                    {
+                        valid = false;
+                        break;
+                    }
+
+                    check = next[check];
+                }
+
+                if (valid)
+                {
+                    myHalfedge* diag1 = new myHalfedge();
+                    myHalfedge* diag2 = new myHalfedge();
+
+                    diag1->source = points[after];
+                    diag2->source = points[before];
+
+                    diag1->twin = diag2;
+                    diag2->twin = diag1;
+
+                    halfedges.push_back(diag1);
+                    halfedges.push_back(diag2);
+
+                    myFace* newFace = new myFace();
+                    faces.push_back(newFace);
+
+                    newFace->adjacent_halfedge = edges[before];
+
+                    edges[before]->next = edges[current];
+                    edges[current]->next = diag1;
+                    diag1->next = edges[before];
+
+                    edges[before]->prev = diag1;
+                    edges[current]->prev = edges[before];
+                    diag1->prev = edges[current];
+
+                    edges[before]->adjacent_face = newFace;
+                    edges[current]->adjacent_face = newFace;
+                    diag1->adjacent_face = newFace;
+
+                    edges[before] = diag2;
+
+                    next[before] = after;
+                    prev[after] = before;
+
+                    left--;
+                    current = after;
+                    clipped = true;
+                    break;
+                }
+            }
+
+            current = next[current];
+
+        } while (current != start);
+    }
+
+    int a = current;
+    int b = next[a];
+    int c = next[b];
+
+    face->adjacent_halfedge = edges[a];
+
+    edges[a]->next = edges[b];
+    edges[b]->next = edges[c];
+    edges[c]->next = edges[a];
+
+    edges[a]->prev = edges[c];
+    edges[b]->prev = edges[a];
+    edges[c]->prev = edges[b];
+
+    edges[a]->adjacent_face = face;
+    edges[b]->adjacent_face = face;
+    edges[c]->adjacent_face = face;
 
     return true;
 }

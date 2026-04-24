@@ -438,7 +438,7 @@ void initMesh()
 
   cout << "Reading mesh from file...\n";
   m = new myMesh();
-  if (m->readFile("gear.obj"))
+  if (m->readFile("c_gear.obj"))
   {
     m->computeNormals();
     makeBuffers(m);

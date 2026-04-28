@@ -235,9 +235,133 @@ void myMesh::splitEdge(myHalfedge *e1, myPoint3D *p)
   v_new->originof = e_new;
 }
 
-void myMesh::splitFaceQUADS(myFace *f, myPoint3D *p) { /**** TODO ****/ }
+void myMesh::splitFaceQUADS(myFace *f, myPoint3D *p) {
+    myVertex* v_center = new myVertex();
+    v_center->point = new myPoint3D(p->X, p->Y, p->Z);
+    v_center->index = vertices.size();
+    vertices.push_back(v_center);
 
-void myMesh::subdivisionCatmullClark() { /**** TODO ****/ }
+    vector<myHalfedge*> original_edges;
+    myHalfedge* curr = f->adjacent_halfedge;
+    do {
+        original_edges.push_back(curr);
+        curr = curr->next;
+    } while (curr != f->adjacent_halfedge);
+}
+
+void::myMesh::subdivisionCatmullClark() {/*** TODO ***/}
+
+void myMesh::surfaceRevolution() {
+    vertices.clear();
+    halfedges.clear();
+    faces.clear();
+
+
+    vector<myPoint3D> profile = {
+        {0.5, 0, 0},
+        {1.0, 1, 0},
+        {0.5, 2, 0},
+        {0.2, 3, 0}
+    };
+
+    int slices = 20;
+    float dtheta = 2.0f * M_PI / slices;
+
+    vector<vector<myVertex*>> grid;
+
+    for (int i = 0; i < slices; i++) {
+
+        float theta = i * dtheta;
+        vector<myVertex*> ring;
+
+        for (const myPoint3D& p : profile) {
+
+            float x = p.X * cos(theta);
+            float z = p.X * sin(theta);
+            float y = p.Y;
+
+            myVertex* v = new myVertex();
+            v->point = new myPoint3D(x, y, z);
+            v->originof = nullptr;
+
+            vertices.push_back(v);
+            ring.push_back(v);
+        }
+
+        grid.push_back(ring);
+    }
+
+    for (int i = 0; i < slices; i++) {
+
+        int next = (i + 1) % slices;
+
+        for (int j = 0; j < profile.size() - 1; j++) {
+
+            myVertex* v0 = grid[i][j];
+            myVertex* v1 = grid[next][j];
+            myVertex* v2 = grid[next][j + 1];
+            myVertex* v3 = grid[i][j + 1];
+
+            myFace* f = new myFace();
+
+            myHalfedge* h0 = new myHalfedge();
+            myHalfedge* h1 = new myHalfedge();
+            myHalfedge* h2 = new myHalfedge();
+            myHalfedge* h3 = new myHalfedge();
+
+            h0->source = v0;
+            h1->source = v1;
+            h2->source = v2;
+            h3->source = v3;
+
+            h0->next = h1;
+            h1->next = h2;
+            h2->next = h3;
+            h3->next = h0;
+
+            h0->prev = h3;
+            h1->prev = h0;
+            h2->prev = h1;
+            h3->prev = h2;
+
+            h0->adjacent_face = f;
+            h1->adjacent_face = f;
+            h2->adjacent_face = f;
+            h3->adjacent_face = f;
+
+            f->adjacent_halfedge = h0;
+
+            if (!v0->originof) v0->originof = h0;
+            if (!v1->originof) v1->originof = h1;
+            if (!v2->originof) v2->originof = h2;
+            if (!v3->originof) v3->originof = h3;
+
+            halfedges.push_back(h0);
+            halfedges.push_back(h1);
+            halfedges.push_back(h2);
+            halfedges.push_back(h3);
+            faces.push_back(f);
+        }
+    }
+
+    map<pair<myVertex*, myVertex*>, myHalfedge*> edgeMap;
+
+    for (myHalfedge* h : halfedges) {
+        edgeMap[{h->source, h->next->source}] = h;
+    }
+
+    for (myHalfedge* h : halfedges) {
+
+        auto it = edgeMap.find({h->next->source, h->source});
+
+        if (it != edgeMap.end() && it->second != h) {
+            h->twin = it->second;
+        } else {
+            h->twin = nullptr;
+        }
+    }
+    computeNormals();
+}
 
 void myMesh::simplify() { /**** TODO ****/ }
 

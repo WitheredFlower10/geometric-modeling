@@ -627,6 +627,7 @@ void initInterface(int argc, char *argv[]) {
   glutAddMenuEntry("Undo", MENU_UNDO);
   glutAddMenuEntry("Generate Mesh", MENU_GENERATE);
   glutAddMenuEntry("Cut Mesh", MENU_CUT);
+  glutAddMenuEntry("Surface of Revolution", MENU_REVOLUTION);
   glutAddMenuEntry("Exit", MENU_EXIT);
 
   glutAttachMenu(GLUT_RIGHT_BUTTON);

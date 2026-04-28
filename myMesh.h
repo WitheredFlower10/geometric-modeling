@@ -19,7 +19,7 @@ public:
 	void normalize();
 
 	void subdivisionCatmullClark();
-
+	void surfaceRevolution(); 
 	void splitFaceTRIS(myFace *, myPoint3D *);
 
 	void splitEdge(myHalfedge *, myPoint3D *);

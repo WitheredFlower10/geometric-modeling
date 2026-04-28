@@ -26,6 +26,7 @@ enum MENU
   MENU_CATMULLCLARK,
   MENU_DRAWWIREFRAME,
   MENU_EXIT,
+  MENU_REVOLUTION,
   MENU_DRAWMESH,
   MENU_LOOP,
   MENU_DRAWMESHVERTICES,
@@ -201,6 +202,14 @@ void menu(int item)
   case MENU_SIMPLIFY:
   {
     m->simplify();
+    break;
+  }
+  case MENU_REVOLUTION:
+  {
+    
+    m->surfaceRevolution();
+		m->computeNormals();
+		makeBuffers(m);
     break;
   }
   }

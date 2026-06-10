@@ -17,6 +17,7 @@ Ce dépôt contient l'ensemble des travaux pratiques et des fonctionnalités obl
 - **Statut** : 🟩 Terminé
 - **Détails** : Permet au visualisateur d'afficher correctement les ombres et les reflets de lumière sur l'objet.
 - **Captures** : ![](screenshots/normals.png)
+![](screenshots/normals2.png)
 
 ### 3. Détection de Silhouette (`Silhouette`)
 - **Description** : Dessin des contours extérieurs du modèle selon l'angle de la caméra.
@@ -29,8 +30,10 @@ Ce dépôt contient l'ensemble des travaux pratiques et des fonctionnalités obl
 - **Statut** : 🟩 Terminé (2 Niveaux)
 - **Détails** : 
   - *Basique* : Gestion des faces convexes par fan-triangulation. (Ne marche pas avec les surfaces concaves en testant avec `gear.obj`)
+  ![](screenshots/gear.png)
   - *Avancé* : Gestion des faces concaves (via l'algorithme des oreilles / *Ear Clipping*).
-- **Captures** : ![](screenshots/triangulation.png)
+- **Captures** :  ![](screenshots/earClipping.png)
+ ![](screenshots/triangulation.png)
 
 ### 5. Tests de Structure Half-Edge (`half-edge data structure tests`)
 - **Description** : Suite de tests unitaires et de cohérence topologique intégrée via la fonction `checkMesh()`.
@@ -48,13 +51,14 @@ Ce dépôt contient l'ensemble des travaux pratiques et des fonctionnalités obl
 - **Description** : Allégement du modèle en supprimant des arêtes.
 - **Statut** : 🟩 Terminé
 - **Détails** : L'algorithme cherche l'arête la plus courte du maillage entier et la fusionne en un seul sommet, puis nettoie les faces écrasées et reconnecte proprement les voisins.
+- **Captures** : ![](screenshots/simplification.png)
 
 ### 8. Subdivision de Catmull-Clark (`Catmull-Clark mesh subdivision`)
 - **Description** : Algorithme de subdivision de surface pour lisser et arrondir les maillages de manière itérative.
 - **Statut** : 🟩 Terminé
 - **Détails** : Divise chaque face en quadrilatères et recalcule la position de tous les points (formules de Catmull-Clark).
 - **Captures** : ![](screenshots/catmull.png)
-
+![](screenshots/catmull1.png)
 ---
 
 ## Déclaration et Justification de l'Utilisation de l'IA (Gemini)

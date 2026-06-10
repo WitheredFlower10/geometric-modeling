@@ -61,7 +61,7 @@ myFace *closest_face;
 
 #include "helperFunctions.h"
 
-char* file = "dolphin.obj";
+char* file = "gear.obj";
 
 void clear()
 {

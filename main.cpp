@@ -61,6 +61,8 @@ myFace *closest_face;
 
 #include "helperFunctions.h"
 
+char* file = "dolphin.obj";
+
 void clear()
 {
   closest_edge = NULL;
@@ -219,6 +221,15 @@ void menu(int item)
 		m->computeNormals();
     m->checkMesh();
 		makeBuffers(m);
+    break;
+  }
+  case MENU_GENERATE:
+  {
+    m->clear();
+    m->readFile(file);
+    m->computeNormals();
+    m->checkMesh();
+    makeBuffers(m); 
     break;
   }
   }
@@ -456,7 +467,7 @@ void initMesh()
 
   cout << "Reading mesh from file...\n";
   m = new myMesh();
-  if (m->readFile("dolphin.obj"))
+  if (m->readFile(file))
   {
     m->computeNormals();
     makeBuffers(m);

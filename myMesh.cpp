@@ -590,9 +590,130 @@ void myMesh::surfaceRevolution()
     computeNormals();
 }
 
-void myMesh::simplify() { /**** TODO ****/ }
+void myMesh::simplify()
+{
+    if (faces.empty() || vertices.empty()) return;
 
-void myMesh::simplify(myVertex *) { /**** TODO ****/ }
+    // Définir un objectif (ici réduire de 10% le nombre de faces)
+    size_t target_faces = static_cast<size_t>(faces.size() * 0.90);
+
+    while (faces.size() > target_faces && !halfedges.empty()) {
+        myHalfedge* global_shortest = nullptr;
+        float min_dist = std::numeric_limits<float>::max();
+
+        // Recherche de l'arête la plus courte sur l'ensemble du maillage
+        for (myHalfedge* h : halfedges) {
+            myVertex* v1 = h->source;
+            myVertex* v2 = h->next->source;
+            
+            float dx = v1->point->X - v2->point->X;
+            float dy = v1->point->Y - v2->point->Y;
+            float dz = v1->point->Z - v2->point->Z;
+            float dist = std::sqrt(dx*dx + dy*dy + dz*dz);
+            
+            if (dist < min_dist) {
+                min_dist = dist;
+                global_shortest = h;
+            }
+        }
+
+        // Si aucune arête n'est trouvable, on stoppe
+        if (!global_shortest) break;
+
+        simplify(global_shortest->source);
+    }
+
+    for (size_t i = 0; i < vertices.size(); ++i) {
+        vertices[i]->index = i;
+    }
+    computeNormals();
+}
+
+void myMesh::simplify(myVertex *v)
+{
+    if (!v || halfedges.empty()) return;
+
+    // 1. Trouver l'arête la plus courte partant de v
+    myHalfedge* shortest_h = nullptr;
+    float min_dist = std::numeric_limits<float>::max();
+
+    for (myHalfedge* h : halfedges) {
+        if (h->source == v) {
+            myVertex* vt = h->next->source;
+            float dx = v->point->X - vt->point->X;
+            float dy = v->point->Y - vt->point->Y;
+            float dz = v->point->Z - vt->point->Z;
+            float dist = std::sqrt(dx*dx + dy*dy + dz*dz);
+            if (dist < min_dist) {
+                min_dist = dist;
+                shortest_h = h;
+            }
+        }
+    }
+
+    // Si le sommet est isolé ou n'a pas d'arête sortante valide
+    if (!shortest_h) return;
+
+    // 2. Identifier les éléments impactés par le collapse
+    myVertex* v_target = shortest_h->next->source;
+    myHalfedge* h_twin = shortest_h->twin;
+
+    // Face adjacente directe et ses composants
+    myFace* f1 = shortest_h->adjacent_face;
+    myHalfedge* h1_next = f1 ? shortest_h->next : nullptr;
+    myHalfedge* h1_prev = f1 ? shortest_h->prev : nullptr;
+
+    // Face adjacente opposée (via le twin) et ses composants
+    myFace* f2 = h_twin ? h_twin->adjacent_face : nullptr;
+    myHalfedge* h2_next = f2 ? h_twin->next : nullptr;
+    myHalfedge* h2_prev = f2 ? h_twin->prev : nullptr;
+
+    // Liste des demi-arêtes à détruire définitivement
+    std::vector<myHalfedge*> to_delete;
+    to_delete.push_back(shortest_h);
+    if (h_twin) to_delete.push_back(h_twin);
+    if (f1) { to_delete.push_back(h1_next); to_delete.push_back(h1_prev); }
+    if (f2) { to_delete.push_back(h2_next); to_delete.push_back(h2_prev); }
+
+    // 3. Recoudre les twins extérieurs pour combler le vide des faces supprimées
+    if (f1) {
+        if (h1_next->twin) h1_next->twin->twin = h1_prev->twin;
+        if (h1_prev->twin) h1_prev->twin->twin = h1_next->twin;
+    }
+    if (f2) {
+        if (h2_next->twin) h2_next->twin->twin = h2_prev->twin;
+        if (h2_prev->twin) h2_prev->twin->twin = h2_next->twin;
+    }
+
+    // 4. Rediriger toutes les arêtes partant de 'v' vers 'v_target'
+    for (myHalfedge* h : halfedges) {
+        if (h->source == v) {
+            h->source = v_target;
+        }
+    }
+
+    // 5. Nettoyage du maillage (Erase)
+    if (f1) faces.erase(std::remove(faces.begin(), faces.end(), f1), faces.end());
+    if (f2) faces.erase(std::remove(faces.begin(), faces.end(), f2), faces.end());
+
+    for (myHalfedge* hd : to_delete) {
+        halfedges.erase(std::remove(halfedges.begin(), halfedges.end(), hd), halfedges.end());
+    }
+    vertices.erase(std::remove(vertices.begin(), vertices.end(), v), vertices.end());
+
+    // 6. Reconstruction des pointeurs originof
+    for (myVertex* vert : vertices) vert->originof = nullptr;
+    for (myHalfedge* h : halfedges) {
+        h->source->originof = h;
+    }
+
+    // 7. Libération de la mémoire
+    delete v->point;
+    delete v;
+    if (f1) delete f1;
+    if (f2) delete f2;
+    for (myHalfedge* hd : to_delete) delete hd;
+}
 
 void myMesh::triangulate()
 {

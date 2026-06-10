@@ -13,6 +13,15 @@ public:
 	std::vector<myFace *> faces;
 	std::string name;
 
+    //Half-edge data structure tests fonctions
+	void checkTwins();
+	void checkNextPrev();
+	void checkFaceHalfedges();
+	void checkEuler();
+	void checkVertex();
+	void checkTwinReciprocity();
+	void checkSources();
+
 	void checkMesh();
 	bool readFile(std::string filename);
 	void computeNormals();

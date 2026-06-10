@@ -77,6 +77,7 @@ void menu(int item)
   {
     m->triangulate();
     m->computeNormals();
+    m->checkMesh();
     makeBuffers(m);
     break;
   }
@@ -170,6 +171,7 @@ void menu(int item)
     m->subdivisionCatmullClark();
     clear();
     m->computeNormals();
+    m->checkMesh();
     makeBuffers(m);
     break;
   }
@@ -179,6 +181,7 @@ void menu(int item)
       m->splitEdge(closest_edge, pickedpoint);
     clear();
     m->computeNormals();
+    m->checkMesh();
     makeBuffers(m);
     break;
   }
@@ -188,6 +191,7 @@ void menu(int item)
       m->splitFaceTRIS(closest_face, pickedpoint);
     clear();
     m->computeNormals();
+    m->checkMesh();
     makeBuffers(m);
     break;
   }
@@ -204,6 +208,7 @@ void menu(int item)
     m->triangulate();
     m->simplify();
     m->computeNormals();
+    m->checkMesh();
     makeBuffers(m);
     break;
   }
@@ -212,6 +217,7 @@ void menu(int item)
     
     m->surfaceRevolution();
 		m->computeNormals();
+    m->checkMesh();
 		makeBuffers(m);
     break;
   }
@@ -450,7 +456,7 @@ void initMesh()
 
   cout << "Reading mesh from file...\n";
   m = new myMesh();
-  if (m->readFile("cube.obj"))
+  if (m->readFile("dolphin.obj"))
   {
     m->computeNormals();
     makeBuffers(m);

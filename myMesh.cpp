@@ -34,7 +34,8 @@ void myMesh::clear()
     faces.swap(empty_faces);
 }
 
-void myMesh::checkMesh()
+// Test : chaque half-edge a un twin
+void myMesh::checkTwins()
 {
     vector<myHalfedge *>::iterator it;
     for (it = halfedges.begin(); it != halfedges.end(); it++)
@@ -43,10 +44,120 @@ void myMesh::checkMesh()
             break;
     }
     if (it != halfedges.end())
-        cout << "Error! Not all edges have their twins!\n";
+        cout << "Error! Not all halfedges have a twin!\n";
     else
-        cout << "Each edge has a twin!\n";
+        cout << "Each halfedge has a twin!\n";
 }
+
+// Test : chaque half-edge a une source non nulle
+void myMesh::checkSources()
+{
+    vector<myHalfedge *>::iterator it;
+    for (it = halfedges.begin(); it != halfedges.end(); it++)
+    {
+        if ((*it)->source == NULL)
+            break;
+    }
+    if (it != halfedges.end())
+        cout << "Error! Some halfedge has a NULL source vertex!\n";
+    else
+        cout << "All halfedges have a valid source!\n";
+}
+
+//  Test : chaînage next/prev cohérent  (he->next->prev == he)
+void myMesh::checkNextPrev()
+{
+    vector<myHalfedge *>::iterator it;
+    for (it = halfedges.begin(); it != halfedges.end(); it++)
+    {
+        if ((*it)->next == NULL || (*it)->prev == NULL)
+            break;
+        if ((*it)->next->prev != (*it))
+            break;
+        if ((*it)->prev->next != (*it))
+            break;
+    }
+    if (it != halfedges.end())
+        cout << "Error! next/prev linkage is inconsistent!\n";
+    else
+        cout << "next/prev linkage is consistent!\n";
+}
+
+//  Test : chaque sommet a un half-edge sortant non nul
+void myMesh::checkVertex() {
+    vector<myVertex *>::iterator it_v;
+    for (it_v = vertices.begin(); it_v != vertices.end(); it_v++)
+    {
+        if ((*it_v)->originof == NULL || (*it_v)->originof->source != (*it_v))
+            break;
+    }
+    if (it_v != vertices.end()) {
+        cout << "Error! Some vertices point to an invalid 'originof' half-edge!\n";
+    } else {
+        cout << "All vertices have a valid 'originof' reference!\n";
+    }
+}
+
+//  Test : chaque face a un half-edge adjacent non nul
+void myMesh::checkFaceHalfedges()
+{
+    vector<myFace *>::iterator it;
+    for (it = faces.begin(); it != faces.end(); it++)
+    {
+        if ((*it)->adjacent_halfedge == NULL)
+            break;
+    }
+    if (it != faces.end())
+        cout << "Error! Some face has no adjacent halfedge!\n";
+    else
+        cout << "All faces have an adjacent halfedge!\n";
+}
+
+//  Test : formule d'Euler  V - E + F = 2
+void myMesh::checkEuler()
+{
+    int V = (int)vertices.size();
+    int E = (int)halfedges.size() / 2;
+    int F = (int)faces.size();
+    int chi = V - E + F;
+ 
+    if (chi != 2)
+        cout << "Error! Euler formula failed: V=" << V
+             << " E=" << E << " F=" << F << " chi=" << chi << " (expected 2)\n";
+    else
+        cout << "Euler formula satisfied: V=" << V
+             << " E=" << E << " F=" << F << " chi=2\n";
+}
+
+//  Test : les twins sont réciproques  (he->twin->twin == he)
+void myMesh::checkTwinReciprocity()
+{
+    vector<myHalfedge *>::iterator it;
+    for (it = halfedges.begin(); it != halfedges.end(); it++)
+    {
+        if ((*it)->twin == NULL || (*it)->twin->twin != (*it))
+            break;
+    }
+    if (it != halfedges.end())
+        cout << "Error! Some twin is not reciprocal (he->twin->twin != he)!\n";
+    else
+        cout << "All twins are reciprocal!\n";
+}
+
+void myMesh::checkMesh()
+{
+    //Half-edge data structure tests
+    cout << "/ ------------ Checking mesh integrity... ----------- \n";
+
+    checkTwins();
+    checkNextPrev();
+    checkFaceHalfedges();
+    checkEuler();
+    checkVertex();
+    checkTwinReciprocity();
+    checkSources();
+}
+
 bool myMesh::readFile(std::string filename)
 {
     string s, t, u;
@@ -467,18 +578,27 @@ void myMesh::subdivisionCatmullClark() {
     this->vertices = newVertices;
     this->faces = newFaces;
     this->halfedges = newHalfedges;
-    computeNormals();
 }
 
 void myMesh::surfaceRevolution()
 {
-    std::vector<myPoint3D> profile;
-    for (myVertex *v : this->vertices)
-    {
-        profile.push_back(*(v->point));
-    }
+    clear();
 
-    int slices = 20;
+    //Profil de pion d'échec généré par Gemini
+    vector<myPoint3D> profile = {
+        {0.0, 0.0, 0.0},         // Fond (fermé sur l'axe)
+        {0.3333f, 0.0, 0.0},     // Bord du fond
+        {0.3f, 0.1f, 0.0},       // Premier palier
+        {0.1667f, 0.1333f, 0.0}, // Creux au-dessus de la base
+        {0.2333f, 0.3333f, 0.0}, // Corps du pion
+        {0.1f, 0.4667f, 0.0},    // Le cou
+        {0.1667f, 0.5f, 0.0},    // La collerette
+        {0.1667f, 0.5667f, 0.0}, // Bas de la tête
+        {0.2f, 0.6667f, 0.0},    // Largeur max de la tête
+        {0.0, 0.8f, 0.0}         // Sommet (fermé sur l'axe)
+    };
+
+    int slices = 30;
     float dtheta = 2.0f * M_PI / slices;
 
     vector<vector<myVertex *>> grid;
@@ -587,7 +707,6 @@ void myMesh::surfaceRevolution()
             h->twin = nullptr;
         }
     }
-    computeNormals();
 }
 
 void myMesh::simplify()
@@ -626,7 +745,6 @@ void myMesh::simplify()
     for (size_t i = 0; i < vertices.size(); ++i) {
         vertices[i]->index = i;
     }
-    computeNormals();
 }
 
 void myMesh::simplify(myVertex *v)

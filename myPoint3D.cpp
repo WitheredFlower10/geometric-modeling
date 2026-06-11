@@ -94,13 +94,19 @@ double myPoint3D::dist(myPoint3D *p1, myPoint3D *p2) {
   return v3.length();
 }
 
+// Calcule la distance (hauteur) entre le point actuel (*this) et le plan du triangle formé par p1, p2 et p3
 double myPoint3D::dist(myPoint3D *p1, myPoint3D *p2, myPoint3D *p3) {
   // distance  between current point, and the triangled defined by p1,p2,p3.
+
+  // 1. On crée deux vecteurs qui suivent deux côtés du triangle à partir du point p1
   myVector3D v1 = *p2 - *p1;
   myVector3D v2 = *p3 - *p1;
+  // 2. Le produit vectoriel (crossproduct) de ces deux côtés nous donne un vecteur perpendiculaire au triangle
   myVector3D n = v1.crossproduct(v2);
   n.normalize();
+  // 3. On crée un vecteur qui va du coin p1 jusqu'à notre point actuel (*this)
   myVector3D vp = *this - *p1;
+  // 4. Le produit scalaire (vp * n) projette ce vecteur sur la perpendiculaire.
   return fabs(vp * n);
 }
 

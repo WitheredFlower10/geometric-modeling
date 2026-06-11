@@ -61,6 +61,7 @@ myFace *closest_face;
 
 #include "helperFunctions.h"
 
+// Le fichier de maillage utilisé
 char* file = "gear.obj";
 
 void clear()
@@ -223,10 +224,11 @@ void menu(int item)
 		makeBuffers(m);
     break;
   }
+  // Ajout du cas de la Réinitialisation / Génération
   case MENU_GENERATE:
   {
-    m->clear();
-    m->readFile(file);
+    m->clear();// Supprime l'ancien objet
+    m->readFile(file);// Recharge le fichier .obj d'origine
     m->computeNormals();
     m->checkMesh();
     makeBuffers(m); 
@@ -331,19 +333,27 @@ void display()
     for (vector<myHalfedge *>::iterator it = m->halfedges.begin();
          it != m->halfedges.end(); it++)
     {
+      // On récupère la demi-arête actuelle
       myHalfedge *e = (*it);
+      // Le premier sommet (la source de l'arête)
       myVertex *v1 = (*it)->source;
       if ((*it)->twin == NULL)
         continue;
+      // Le deuxième sommet, donc la destination de notre arête
       myVertex *v2 = (*it)->twin->source;
+      // On récupère les deux faces séparées par cette arête
       myFace *f1 = e->adjacent_face;
       myFace *f2 = e->twin->adjacent_face;  
+      // Si l'une des deux faces n'existe pas, on ne peut pas tester la silhouette
       if (!f1 || !f2)
         continue;
+      // Calcul du vecteur de vue : de la caméra vers le milieu de l'arête (moyenne de v1 et v2)
       myVector3D viewDir = camera_eye - (*v1->point + *v2->point) / 2.0;
       viewDir.normalize();
+      // Produit scalaire entre la normale de chaque face et le vecteur de vue
       double d1 = (*f1->normal) * viewDir;
       double d2 = (*f2->normal) * viewDir;
+      // Si le résultat est positif, la face est visible. S'il est négatif, elle est cachée.
       if (d1 < 0 != d2 < 0)
       {
         silhouette_edges.push_back(v1->index);
@@ -467,6 +477,8 @@ void initMesh()
 
   cout << "Reading mesh from file...\n";
   m = new myMesh();
+  //Remplacement du fichier en dur par la variable globale "file" 
+  // pour que le fichier chargé au démarrage soit le même que celui du bouton reset (MENU_GENERATE)
   if (m->readFile(file))
   {
     m->computeNormals();

@@ -9,6 +9,7 @@ myHalfedge::myHalfedge(void)
 	twin = NULL;  
 }
 
+// Copie les données et les liaisons d'une autre demi-arête (ie) dans celle-ci
 void myHalfedge::copy(myHalfedge *ie)
 {
    if (!ie) return;
